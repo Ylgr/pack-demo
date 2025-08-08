@@ -53,8 +53,8 @@ function PackApp() {
     },
   })
 
-  // Read ERC1155 balance
-  const { data: erc1155Balance } = useReadContract({
+  // Read ERC1155 balances for token IDs 0, 1, 2
+  const { data: erc1155Balance0 } = useReadContract({
     address: ERC1155_CONTRACT_ADDRESS as `0x${string}`,
     abi: [
       {
@@ -70,6 +70,48 @@ function PackApp() {
     ],
     functionName: 'balanceOf',
     args: [address as `0x${string}`, BigInt(0)],
+    query: {
+      enabled: !!address,
+    },
+  })
+
+  const { data: erc1155Balance1 } = useReadContract({
+    address: ERC1155_CONTRACT_ADDRESS as `0x${string}`,
+    abi: [
+      {
+        inputs: [
+          { name: 'account', type: 'address' },
+          { name: 'id', type: 'uint256' },
+        ],
+        name: 'balanceOf',
+        outputs: [{ name: '', type: 'uint256' }],
+        stateMutability: 'view',
+        type: 'function',
+      },
+    ],
+    functionName: 'balanceOf',
+    args: [address as `0x${string}`, BigInt(1)],
+    query: {
+      enabled: !!address,
+    },
+  })
+
+  const { data: erc1155Balance2 } = useReadContract({
+    address: ERC1155_CONTRACT_ADDRESS as `0x${string}`,
+    abi: [
+      {
+        inputs: [
+          { name: 'account', type: 'address' },
+          { name: 'id', type: 'uint256' },
+        ],
+        name: 'balanceOf',
+        outputs: [{ name: '', type: 'uint256' }],
+        stateMutability: 'view',
+        type: 'function',
+      },
+    ],
+    functionName: 'balanceOf',
+    args: [address as `0x${string}`, BigInt(2)],
     query: {
       enabled: !!address,
     },
@@ -285,7 +327,7 @@ function PackApp() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
                       <div className="bg-gray-50 rounded-lg p-4">
                         <h3 className="font-medium text-gray-900 mb-2">Pack Balance</h3>
                         <p className="text-2xl font-bold text-blue-600">
@@ -301,9 +343,23 @@ function PackApp() {
                       </div>
                       
                       <div className="bg-gray-50 rounded-lg p-4">
-                        <h3 className="font-medium text-gray-900 mb-2">ERC1155 Balance</h3>
+                        <h3 className="font-medium text-gray-900 mb-2">ERC1155 Balance (ID: 0)</h3>
                         <p className="text-2xl font-bold text-purple-600">
-                          {erc1155Balance ? Number(erc1155Balance).toString() : '0'}
+                          {erc1155Balance0 ? Number(erc1155Balance0).toString() : '0'}
+                        </p>
+                      </div>
+                      
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <h3 className="font-medium text-gray-900 mb-2">ERC1155 Balance (ID: 1)</h3>
+                        <p className="text-2xl font-bold text-purple-600">
+                          {erc1155Balance1 ? Number(erc1155Balance1).toString() : '0'}
+                        </p>
+                      </div>
+                      
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <h3 className="font-medium text-gray-900 mb-2">ERC1155 Balance (ID: 2)</h3>
+                        <p className="text-2xl font-bold text-purple-600">
+                          {erc1155Balance2 ? Number(erc1155Balance2).toString() : '0'}
                         </p>
                       </div>
                       
