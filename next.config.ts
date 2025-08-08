@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
-  basePath: process.env.NODE_ENV === 'production' ? '/demo-pack' : '',
+  basePath: process.env.NODE_ENV === 'production' ? '/pack-demo' : '',
 };
 
 export default nextConfig;
