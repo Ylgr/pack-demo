@@ -39,6 +39,32 @@ A Next.js application for managing and opening NFT packs using wagmi and viem fo
 
 3. Open [http://localhost:3000](http://localhost:3000) in your browser
 
+## Deployment
+
+### GitHub Pages
+
+The application is deployed to GitHub Pages and is available at:
+**https://ylgr.github.io/pack-demo/**
+
+To deploy updates:
+
+1. **Automatic deployment**:
+   ```bash
+   npm run deploy
+   ```
+
+2. **Manual deployment**:
+   ```bash
+   npm run build
+   npx gh-pages -d out
+   ```
+
+3. **Using the deployment script**:
+   ```bash
+   chmod +x deploy.sh
+   ./deploy.sh
+   ```
+
 ## Usage
 
 1. **Connect Wallet**: Click on any wallet connector button to connect your wallet
