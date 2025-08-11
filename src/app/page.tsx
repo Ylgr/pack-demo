@@ -9,26 +9,57 @@ import { formatEther } from 'viem'
 
 function PackApp() {
   const [activeTab, setActiveTab] = useState<'pack' | 'inventory'>('pack')
+  const [activePackId, setActivePackId] = useState<number>(0)
   const [amountToOpen, setAmountToOpen] = useState('1')
   
   const { address, isConnected } = useAccount()
   const { connect, connectors, isPending: isConnecting } = useConnect()
   const { disconnect } = useDisconnect()
 
-  // Read pack contents
+  // Read pack contents for the active pack ID
   const { data: packContents, isLoading: isLoadingPackContents, refetch: refetchPackContents } = useReadContract({
     address: PACK_CONTRACT_ADDRESS as `0x${string}`,
     abi: PACK_ABI,
     functionName: 'getPackContents',
-    args: [BigInt(0)],
+    args: [BigInt(activePackId)],
   }) as { data: PackContentsResult | undefined, isLoading: boolean, refetch: () => void }
 
-  // Read pack balance
-  const { data: packBalance } = useReadContract({
+  // Read pack balances for all IDs
+  const { data: packBalance0 } = useReadContract({
     address: PACK_CONTRACT_ADDRESS as `0x${string}`,
     abi: PACK_ABI,
     functionName: 'balanceOf',
     args: [address as `0x${string}`, BigInt(0)],
+    query: {
+      enabled: !!address,
+    },
+  })
+
+  const { data: packBalance1 } = useReadContract({
+    address: PACK_CONTRACT_ADDRESS as `0x${string}`,
+    abi: PACK_ABI,
+    functionName: 'balanceOf',
+    args: [address as `0x${string}`, BigInt(1)],
+    query: {
+      enabled: !!address,
+    },
+  })
+
+  const { data: packBalance2 } = useReadContract({
+    address: PACK_CONTRACT_ADDRESS as `0x${string}`,
+    abi: PACK_ABI,
+    functionName: 'balanceOf',
+    args: [address as `0x${string}`, BigInt(2)],
+    query: {
+      enabled: !!address,
+    },
+  })
+
+  const { data: packBalance3 } = useReadContract({
+    address: PACK_CONTRACT_ADDRESS as `0x${string}`,
+    abi: PACK_ABI,
+    functionName: 'balanceOf',
+    args: [address as `0x${string}`, BigInt(3)],
     query: {
       enabled: !!address,
     },
@@ -117,6 +148,48 @@ function PackApp() {
     },
   })
 
+  const { data: erc1155Balance3 } = useReadContract({
+    address: ERC1155_CONTRACT_ADDRESS as `0x${string}`,
+    abi: [
+      {
+        inputs: [
+          { name: 'account', type: 'address' },
+          { name: 'id', type: 'uint256' },
+        ],
+        name: 'balanceOf',
+        outputs: [{ name: '', type: 'uint256' }],
+        stateMutability: 'view',
+        type: 'function',
+      },
+    ],
+    functionName: 'balanceOf',
+    args: [address as `0x${string}`, BigInt(3)],
+    query: {
+      enabled: !!address,
+    },
+  })
+
+  const { data: erc1155Balance4 } = useReadContract({
+    address: ERC1155_CONTRACT_ADDRESS as `0x${string}`,
+    abi: [
+      {
+        inputs: [
+          { name: 'account', type: 'address' },
+          { name: 'id', type: 'uint256' },
+        ],
+        name: 'balanceOf',
+        outputs: [{ name: '', type: 'uint256' }],
+        stateMutability: 'view',
+        type: 'function',
+      },
+    ],
+    functionName: 'balanceOf',
+    args: [address as `0x${string}`, BigInt(4)],
+    query: {
+      enabled: !!address,
+    },
+  })
+
   // Read ERC721 balance
   const { data: erc721Balance } = useReadContract({
     address: ERC721_CONTRACT_ADDRESS as `0x${string}`,
@@ -143,13 +216,13 @@ function PackApp() {
     hash: openPackData,
   })
 
-  const handleOpenPack = () => {
+  const handleOpenPack = (packId: number) => {
     if (openPack && amountToOpen) {
       openPack({
         address: PACK_CONTRACT_ADDRESS as `0x${string}`,
         abi: PACK_ABI,
         functionName: 'openPack',
-        args: [BigInt(0), BigInt(amountToOpen)],
+        args: [BigInt(packId), BigInt(amountToOpen)],
       })
     }
   }
@@ -231,8 +304,25 @@ function PackApp() {
           <div className="p-6">
             {activeTab === 'pack' ? (
               <div>
+                {/* Pack ID Tabs */}
+                <div className="flex space-x-2 mb-4">
+                  {[0, 1, 2, 3].map((packId) => (
+                    <button
+                      key={packId}
+                      onClick={() => setActivePackId(packId)}
+                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                        activePackId === packId
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
+                      Pack ID {packId}
+                    </button>
+                  ))}
+                </div>
+
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-semibold">Pack Contents (Pack ID: 0)</h2>
+                  <h2 className="text-xl font-semibold">Pack Contents (Pack ID: {activePackId})</h2>
                   <button
                     onClick={() => refetchPackContents()}
                     disabled={isLoadingPackContents}
@@ -329,9 +419,30 @@ function PackApp() {
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
                       <div className="bg-gray-50 rounded-lg p-4">
-                        <h3 className="font-medium text-gray-900 mb-2">Pack Balance</h3>
+                        <h3 className="font-medium text-gray-900 mb-2">Pack Balance (ID: 0)</h3>
                         <p className="text-2xl font-bold text-blue-600">
-                          {packBalance ? Number(packBalance).toString() : '0'}
+                          {packBalance0 ? Number(packBalance0).toString() : '0'}
+                        </p>
+                      </div>
+                      
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <h3 className="font-medium text-gray-900 mb-2">Pack Balance (ID: 1)</h3>
+                        <p className="text-2xl font-bold text-blue-600">
+                          {packBalance1 ? Number(packBalance1).toString() : '0'}
+                        </p>
+                      </div>
+                      
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <h3 className="font-medium text-gray-900 mb-2">Pack Balance (ID: 2)</h3>
+                        <p className="text-2xl font-bold text-blue-600">
+                          {packBalance2 ? Number(packBalance2).toString() : '0'}
+                        </p>
+                      </div>
+                      
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <h3 className="font-medium text-gray-900 mb-2">Pack Balance (ID: 3)</h3>
+                        <p className="text-2xl font-bold text-blue-600">
+                          {packBalance3 ? Number(packBalance3).toString() : '0'}
                         </p>
                       </div>
                       
@@ -364,6 +475,20 @@ function PackApp() {
                       </div>
                       
                       <div className="bg-gray-50 rounded-lg p-4">
+                        <h3 className="font-medium text-gray-900 mb-2">ERC1155 Balance (ID: 3)</h3>
+                        <p className="text-2xl font-bold text-purple-600">
+                          {erc1155Balance3 ? Number(erc1155Balance3).toString() : '0'}
+                        </p>
+                      </div>
+                      
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <h3 className="font-medium text-gray-900 mb-2">ERC1155 Balance (ID: 4)</h3>
+                        <p className="text-2xl font-bold text-purple-600">
+                          {erc1155Balance4 ? Number(erc1155Balance4).toString() : '0'}
+                        </p>
+                      </div>
+                      
+                      <div className="bg-gray-50 rounded-lg p-4">
                         <h3 className="font-medium text-gray-900 mb-2">ERC721 Balance</h3>
                         <p className="text-2xl font-bold text-orange-600">
                           {erc721Balance ? Number(erc721Balance).toString() : '0'}
@@ -374,25 +499,38 @@ function PackApp() {
                     {/* Open Pack Section */}
                     <div className="bg-blue-50 rounded-lg p-6 mt-6">
                       <h3 className="text-lg font-semibold text-blue-900 mb-4">Open Pack</h3>
-                      <div className="flex items-center gap-4">
-                        <input
-                          type="number"
-                          value={amountToOpen}
-                          onChange={(e) => setAmountToOpen(e.target.value)}
-                          min="1"
-                          className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder="Amount to open"
-                        />
-                        <button
-                          onClick={handleOpenPack}
-                          disabled={!isConnected || isOpeningPack || isWaitingForTransaction || !amountToOpen}
-                          className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white px-6 py-2 rounded-lg transition-colors"
-                        >
-                          {isOpeningPack || isWaitingForTransaction ? 'Opening...' : 'Open Pack'}
-                        </button>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        {[0, 1, 2, 3].map((packId) => (
+                          <div key={packId} className="bg-white rounded-lg p-4 border border-blue-200">
+                            <h4 className="font-medium text-blue-900 mb-2">Pack ID {packId}</h4>
+                            <p className="text-sm text-gray-600 mb-3">
+                              Balance: {packId === 0 ? (packBalance0 ? Number(packBalance0).toString() : '0') :
+                                       packId === 1 ? (packBalance1 ? Number(packBalance1).toString() : '0') :
+                                       packId === 2 ? (packBalance2 ? Number(packBalance2).toString() : '0') :
+                                       (packBalance3 ? Number(packBalance3).toString() : '0')}
+                            </p>
+                            <div className="flex items-center gap-2 mb-3">
+                              <input
+                                type="number"
+                                value={amountToOpen}
+                                onChange={(e) => setAmountToOpen(e.target.value)}
+                                min="1"
+                                className="border border-gray-300 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 flex-1"
+                                placeholder="Amount"
+                              />
+                            </div>
+                            <button
+                              onClick={() => handleOpenPack(packId)}
+                              disabled={!isConnected || isOpeningPack || isWaitingForTransaction || !amountToOpen}
+                              className="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white px-3 py-2 rounded-lg transition-colors text-sm"
+                            >
+                              {isOpeningPack || isWaitingForTransaction ? 'Opening...' : 'Open Pack'}
+                            </button>
+                          </div>
+                        ))}
                       </div>
                       {openPackData && (
-                        <p className="text-sm text-blue-600 mt-2">
+                        <p className="text-sm text-blue-600 mt-4">
                           Transaction: {openPackData}
                         </p>
                       )}
