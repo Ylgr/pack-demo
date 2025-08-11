@@ -33,6 +33,50 @@ function PackOpenedModal({
 }) {
   if (!isOpen || !eventData) return null
 
+  // Use mappings from PackApp (duplicate or lift up if needed)
+  const packNames = [
+    'Tre Lucky',
+    'Tre Sprout',
+    'Tre Spirit',
+    'Tre Guardian',
+  ];
+  const packColors = [
+    'bg-white-500', // Tre Lucky
+    'bg-green-500', // Tre Sprout
+    'bg-blue-500', // Tre Spirit
+    'bg-purple-600', // Tre Guardian (last one purple)
+  ];
+  const packTextColors = [
+    'text-white-500',
+    'text-green-500',
+    'text-blue-500',
+    'text-purple-600',
+  ];
+  const packLogos = [
+    '❓✨', // You can replace with SVG or image if needed
+    '❓🌱',
+    '❓🪴',
+    '❓🎋',
+  ];
+  const erc20Name = 'Lucky BIC';
+  const erc20Logo = '🪙'; // Coin emoji
+  const erc1155Name = 'Original Baby Tre';
+  const erc1155Ids = [
+    'OGBT Common',
+    'OGBT Uncommon',
+    'OGBT Rare',
+    'OGBT Epic',
+    'OGBT Legendary',
+  ];
+  // Reddit-style colors for ERC1155, matching pack colors
+  const erc1155Colors = [
+    'text-white-500',
+    'text-green-500',
+    'text-blue-500',
+    'text-yellow-600',
+    'text-purple-500', // Legendary, can be adjusted
+  ];
+
   const getTokenTypeName = (tokenType: number) => {
     switch (tokenType) {
       case 0: return 'ERC20'
@@ -54,57 +98,56 @@ function PackOpenedModal({
             ×
           </button>
         </div>
-        
         <div className="space-y-4">
           <div className="bg-blue-50 rounded-lg p-4">
-            <h3 className="font-medium text-blue-900 mb-2">Pack Details</h3>
-            <p className="text-sm text-blue-800">
-              You opened <strong>Pack ID: {Number(eventData.packId)}</strong> 
-              - with amount <strong>{Number(eventData.numOfPacksOpened)}</strong>
+            <h3 className={`font-medium mb-2 ${packColors[Number(eventData.packId)]}`}>Pack Details</h3>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-2xl">{packLogos[Number(eventData.packId)]}</span>
+              <span className={`font-semibold ${packTextColors[Number(eventData.packId)]}`}>
+                {packNames[Number(eventData.packId)]}
+              </span>
+            </div>
+            <p className={`text-sm ${packColors[Number(eventData.packId)]}`}>
+              You opened <strong>{packNames[Number(eventData.packId)]} (Pack ID: {Number(eventData.packId)})</strong>
+              {" "}with amount <strong>{Number(eventData.numOfPacksOpened)}</strong>
             </p>
           </div>
-
           <div>
-            <h3 className="font-medium text-gray-900 mb-3">Rewards Received:</h3>
-            {eventData.rewardUnitsDistributed.length > 0 ? (
+            <h3 className="font-medium text-gray-900 mb-3">Your Rewards:</h3>
+            {eventData.rewardUnitsDistributed.filter(r => r.tokenType !== 1).length > 0 ? (
               <div className="space-y-3">
-                {eventData.rewardUnitsDistributed.map((reward, index) => (
-                  <div key={index} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div>
-                        <span className="text-sm font-medium text-gray-500">Token Type</span>
-                        <p className="text-sm font-semibold text-gray-900">
-                          {getTokenTypeName(reward.tokenType)}
-                        </p>
+                {eventData.rewardUnitsDistributed.filter(r => r.tokenType !== 1).map((reward, index) => {
+                  // Show only a friendly summary for each reward
+                  if (reward.tokenType === 0) {
+                    // ERC20
+                    return (
+                      <div key={index} className="flex items-center gap-3 bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        <span className="text-2xl">{erc20Logo}</span>
+                        <span className="font-semibold text-green-700">
+                          {formatEther(reward.totalAmount)} {erc20Name}
+                        </span>
                       </div>
-                      <div>
-                        <span className="text-sm font-medium text-gray-500">Token ID</span>
-                        <p className="text-sm font-semibold text-gray-900">
-                          {reward.tokenType === 0 ? formatEther(reward.totalAmount) : Number(reward.tokenId).toString()}
-                        </p>
+                    )
+                  } else if (reward.tokenType === 2) {
+                    // ERC1155
+                    const id = Number(reward.tokenId);
+                    return (
+                      <div key={index} className="flex items-center gap-3 bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        <span className="text-2xl">🎍</span>
+                        <span className={`font-semibold ${erc1155Colors[id]}`}>
+                          {Number(reward.totalAmount)} {erc1155Name} ({erc1155Ids[id]})
+                        </span>
                       </div>
-                      <div>
-                        <span className="text-sm font-medium text-gray-500">Total Amount</span>
-                        <p className="text-sm font-semibold text-gray-900">
-                          {reward.tokenType === 0 ? formatEther(reward.totalAmount) : Number(reward.totalAmount).toString()}
-                        </p>
-                      </div>
-                      <div>
-                        <span className="text-sm font-medium text-gray-500">Contract</span>
-                        <p className="text-sm font-mono text-gray-900 truncate">
-                          {reward.assetContract}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                    )
+                  }
+                  return null;
+                })}
               </div>
             ) : (
               <p className="text-gray-600 text-center py-4">No rewards distributed</p>
             )}
           </div>
         </div>
-
         <div className="mt-6 flex justify-end">
           <button
             onClick={onClose}
@@ -119,6 +162,49 @@ function PackOpenedModal({
 }
 
 function PackApp() {
+  // Mappings for names and colors
+  const packNames = [
+    'Tre Lucky',
+    'Tre Sprout',
+    'Tre Spirit',
+    'Tre Guardian',
+  ];
+  const packColors = [
+    'bg-white-500', // Tre Lucky
+    'bg-green-500', // Tre Sprout
+    'bg-blue-500', // Tre Spirit
+    'bg-purple-600', // Tre Guardian (last one purple)
+  ];
+  const packTextColors = [
+    'text-white-500',
+    'text-green-500',
+    'text-blue-500',
+    'text-purple-600',
+  ];
+  const packLogos = [
+    '❓✨', // You can replace with SVG or image if needed
+    '❓🌱',
+    '❓🪴',
+    '❓🎋',
+  ];
+  const erc20Name = 'Lucky BIC';
+  const erc20Logo = '🪙'; // Coin emoji
+  const erc1155Name = 'Original Baby Tre';
+  const erc1155Ids = [
+    'OGBT Common',
+    'OGBT Uncommon',
+    'OGBT Rare',
+    'OGBT Epic',
+    'OGBT Legendary',
+  ];
+  // Reddit-style colors for ERC1155, matching pack colors
+  const erc1155Colors = [
+    'text-white-500',
+    'text-green-500',
+    'text-blue-500',
+    'text-yellow-600',
+    'text-purple-500', // Legendary, can be adjusted
+  ];
   const [activeTab, setActiveTab] = useState<'pack' | 'inventory'>('pack')
   const [activePackId, setActivePackId] = useState<number>(0)
   const [amountToOpen, setAmountToOpen] = useState('1')
@@ -508,13 +594,14 @@ function PackApp() {
                     <button
                       key={packId}
                       onClick={() => setActivePackId(packId)}
-                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                      className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
                         activePackId === packId
-                          ? 'bg-blue-500 text-white'
+                          ? packColors[packId] + ' text-white'
                           : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                       }`}
                     >
-                      Pack ID {packId}
+                      <span>{packLogos[packId]}</span>
+                      <span>{packNames[packId]}</span>
                     </button>
                   ))}
                 </div>
@@ -553,6 +640,7 @@ function PackApp() {
                     {(() => {
                       // Calculate total number of tokens first
                       const totalTokens = (packContents as any)[0].reduce((total: number, content: any, index: number) => {
+                        if (content.tokenType === 1) return total; // skip ERC721
                         const number = calculateNumber(
                           content.totalAmount,
                           // @ts-ignore
@@ -562,6 +650,7 @@ function PackApp() {
                       }, 0)
 
                       return (packContents as any)[0].map((content: any, index: number) => { 
+                        if (content.tokenType === 1) return null; // skip ERC721
                         const number = calculateNumber(
                           content.totalAmount,
                           // @ts-ignore
@@ -616,82 +705,19 @@ function PackApp() {
                 ) : (
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-                      <div className="bg-gray-50 rounded-lg p-4">
-                        <h3 className="font-medium text-gray-900 mb-2">Pack Balance (ID: 0)</h3>
-                        <p className="text-2xl font-bold text-blue-600">
-                          {packBalance0 ? Number(packBalance0).toString() : '0'}
-                        </p>
-                      </div>
-                      
-                      <div className="bg-gray-50 rounded-lg p-4">
-                        <h3 className="font-medium text-gray-900 mb-2">Pack Balance (ID: 1)</h3>
-                        <p className="text-2xl font-bold text-blue-600">
-                          {packBalance1 ? Number(packBalance1).toString() : '0'}
-                        </p>
-                      </div>
-                      
-                      <div className="bg-gray-50 rounded-lg p-4">
-                        <h3 className="font-medium text-gray-900 mb-2">Pack Balance (ID: 2)</h3>
-                        <p className="text-2xl font-bold text-blue-600">
-                          {packBalance2 ? Number(packBalance2).toString() : '0'}
-                        </p>
-                      </div>
-                      
-                      <div className="bg-gray-50 rounded-lg p-4">
-                        <h3 className="font-medium text-gray-900 mb-2">Pack Balance (ID: 3)</h3>
-                        <p className="text-2xl font-bold text-blue-600">
-                          {packBalance3 ? Number(packBalance3).toString() : '0'}
-                        </p>
-                      </div>
-                      
-                      <div className="bg-gray-50 rounded-lg p-4">
-                        <h3 className="font-medium text-gray-900 mb-2">ERC20 Balance</h3>
-                        <p className="text-2xl font-bold text-green-600">
-                          {erc20Balance ? formatEther(erc20Balance) : '0'}
-                        </p>
-                      </div>
-                      
-                      <div className="bg-gray-50 rounded-lg p-4">
-                        <h3 className="font-medium text-gray-900 mb-2">ERC1155 Balance (ID: 0)</h3>
-                        <p className="text-2xl font-bold text-purple-600">
-                          {erc1155Balance0 ? Number(erc1155Balance0).toString() : '0'}
-                        </p>
-                      </div>
-                      
-                      <div className="bg-gray-50 rounded-lg p-4">
-                        <h3 className="font-medium text-gray-900 mb-2">ERC1155 Balance (ID: 1)</h3>
-                        <p className="text-2xl font-bold text-purple-600">
-                          {erc1155Balance1 ? Number(erc1155Balance1).toString() : '0'}
-                        </p>
-                      </div>
-                      
-                      <div className="bg-gray-50 rounded-lg p-4">
-                        <h3 className="font-medium text-gray-900 mb-2">ERC1155 Balance (ID: 2)</h3>
-                        <p className="text-2xl font-bold text-purple-600">
-                          {erc1155Balance2 ? Number(erc1155Balance2).toString() : '0'}
-                        </p>
-                      </div>
-                      
-                      <div className="bg-gray-50 rounded-lg p-4">
-                        <h3 className="font-medium text-gray-900 mb-2">ERC1155 Balance (ID: 3)</h3>
-                        <p className="text-2xl font-bold text-purple-600">
-                          {erc1155Balance3 ? Number(erc1155Balance3).toString() : '0'}
-                        </p>
-                      </div>
-                      
-                      <div className="bg-gray-50 rounded-lg p-4">
-                        <h3 className="font-medium text-gray-900 mb-2">ERC1155 Balance (ID: 4)</h3>
-                        <p className="text-2xl font-bold text-purple-600">
-                          {erc1155Balance4 ? Number(erc1155Balance4).toString() : '0'}
-                        </p>
-                      </div>
-                      
-                      <div className="bg-gray-50 rounded-lg p-4">
-                        <h3 className="font-medium text-gray-900 mb-2">ERC721 Balance</h3>
-                        <p className="text-2xl font-bold text-orange-600">
-                          {erc721Balance ? Number(erc721Balance).toString() : '0'}
-                        </p>
-                      </div>
+                      {[0, 1, 2, 3].map((packId) => (
+                        <div key={packId} className="bg-gray-50 rounded-lg p-4">
+                          <h3 className={`font-medium mb-2 flex items-center gap-2 ${packTextColors[packId]}`}> 
+                            <span>{packLogos[packId]}</span> {packNames[packId]}
+                          </h3>
+                          <p className="text-2xl font-bold">
+                            {packId === 0 ? (packBalance0 ? Number(packBalance0).toString() : '0') :
+                             packId === 1 ? (packBalance1 ? Number(packBalance1).toString() : '0') :
+                             packId === 2 ? (packBalance2 ? Number(packBalance2).toString() : '0') :
+                             (packBalance3 ? Number(packBalance3).toString() : '0')}
+                          </p>
+                        </div>
+                      ))}
                     </div>
 
                     {/* Open Pack Section */}
@@ -732,6 +758,32 @@ function PackApp() {
                           Transaction: {openPackData}
                         </p>
                       )}
+                    </div>
+
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <h3 className="font-medium text-gray-900 mb-2 flex items-center gap-2">
+                        <span>{erc20Logo}</span> {erc20Name}
+                      </h3>
+                      <p className="text-2xl font-bold text-green-600">
+                        {erc20Balance ? formatEther(erc20Balance) : '0'}
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+                      {[0, 1, 2, 3, 4].map((id) => (
+                        <div key={id} className="bg-gray-50 rounded-lg p-4">
+                          <h3 className={`font-medium mb-2 flex items-center gap-2 ${erc1155Colors[id]}`}>
+                            <span>🎍</span> {erc1155Name} ({erc1155Ids[id]})
+                          </h3>
+                          <p className={`text-2xl font-bold ${erc1155Colors[id]}`}>
+                            {id === 0 ? (erc1155Balance0 ? Number(erc1155Balance0).toString() : '0') :
+                             id === 1 ? (erc1155Balance1 ? Number(erc1155Balance1).toString() : '0') :
+                             id === 2 ? (erc1155Balance2 ? Number(erc1155Balance2).toString() : '0') :
+                             id === 3 ? (erc1155Balance3 ? Number(erc1155Balance3).toString() : '0') :
+                             (erc1155Balance4 ? Number(erc1155Balance4).toString() : '0')}
+                          </p>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
