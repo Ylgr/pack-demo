@@ -41,13 +41,13 @@ function PackOpenedModal({
     'Tre Guardian',
   ];
   const packColors = [
-    'bg-white-500', // Tre Lucky
+    'bg-black-500', // Tre Lucky
     'bg-green-500', // Tre Sprout
     'bg-blue-500', // Tre Spirit
     'bg-purple-600', // Tre Guardian (last one purple)
   ];
   const packTextColors = [
-    'text-white-500',
+    'text-black-500',
     'text-green-500',
     'text-blue-500',
     'text-purple-600',
@@ -70,7 +70,7 @@ function PackOpenedModal({
   ];
   // Reddit-style colors for ERC1155, matching pack colors
   const erc1155Colors = [
-    'text-white-500',
+    'text-black-500',
     'text-green-500',
     'text-blue-500',
     'text-yellow-600',
@@ -170,13 +170,13 @@ function PackApp() {
     'Tre Guardian',
   ];
   const packColors = [
-    'bg-white-500', // Tre Lucky
+    'bg-gray-500', // Tre Lucky
     'bg-green-500', // Tre Sprout
     'bg-blue-500', // Tre Spirit
     'bg-purple-600', // Tre Guardian (last one purple)
   ];
   const packTextColors = [
-    'text-white-500',
+    'text-gray-500',
     'text-green-500',
     'text-blue-500',
     'text-purple-600',
@@ -199,7 +199,7 @@ function PackApp() {
   ];
   // Reddit-style colors for ERC1155, matching pack colors
   const erc1155Colors = [
-    'text-white-500',
+    'text-black-500',
     'text-green-500',
     'text-blue-500',
     'text-yellow-600',
@@ -607,7 +607,7 @@ function PackApp() {
                 </div>
 
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-semibold">Pack Contents (Pack ID: {activePackId})</h2>
+                  <h2 className={`text-xl font-semibold ${packTextColors[activePackId]}`}> {packNames[activePackId]} (Pack ID: {activePackId}) </h2>
                   <button
                     onClick={() => refetchPackContents()}
                     disabled={isLoadingPackContents}
@@ -726,7 +726,9 @@ function PackApp() {
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         {[0, 1, 2, 3].map((packId) => (
                           <div key={packId} className="bg-white rounded-lg p-4 border border-blue-200">
-                            <h4 className="font-medium text-blue-900 mb-2">Pack ID {packId}</h4>
+                            <h4 className={`font-medium mb-2 flex items-center gap-2 ${packTextColors[packId]}`}>
+                              <span>{packLogos[packId]}</span> {packNames[packId]} <span className="text-xs text-gray-500">(Pack ID {packId})</span>
+                            </h4>
                             <p className="text-sm text-gray-600 mb-3">
                               Balance: {packId === 0 ? (packBalance0 ? Number(packBalance0).toString() : '0') :
                                        packId === 1 ? (packBalance1 ? Number(packBalance1).toString() : '0') :
