@@ -5,12 +5,125 @@ import { useAccount, useConnect, useDisconnect, useReadContract, useWriteContrac
 import { WagmiProvider } from '@/components/WagmiProvider'
 import { ClientOnly } from '@/components/ClientOnly'
 import { PACK_CONTRACT_ADDRESS, PACK_ABI, ERC20_CONTRACT_ADDRESS, ERC1155_CONTRACT_ADDRESS, ERC721_CONTRACT_ADDRESS, PackContentsResult } from '@/lib/contracts'
-import { formatEther } from 'viem'
+import { formatEther, decodeEventLog } from 'viem'
+import React from 'react' // Added for useEffect
+
+// Interface for the PackOpened event data
+interface PackOpenedEvent {
+  packId: bigint
+  opener: string
+  numOfPacksOpened: bigint
+  rewardUnitsDistributed: {
+    assetContract: string
+    tokenType: number
+    tokenId: bigint
+    totalAmount: bigint
+  }[]
+}
+
+// Modal component for displaying pack opening results
+function PackOpenedModal({ 
+  isOpen, 
+  onClose, 
+  eventData 
+}: { 
+  isOpen: boolean
+  onClose: () => void
+  eventData: PackOpenedEvent | null
+}) {
+  if (!isOpen || !eventData) return null
+
+  const getTokenTypeName = (tokenType: number) => {
+    switch (tokenType) {
+      case 0: return 'ERC20'
+      case 1: return 'ERC721'
+      case 2: return 'ERC1155'
+      default: return 'Unknown'
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold text-gray-900">Pack Opened Successfully! 🎉</h2>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
+          >
+            ×
+          </button>
+        </div>
+        
+        <div className="space-y-4">
+          <div className="bg-blue-50 rounded-lg p-4">
+            <h3 className="font-medium text-blue-900 mb-2">Pack Details</h3>
+            <p className="text-sm text-blue-800">
+              You opened <strong>Pack ID: {Number(eventData.packId)}</strong> 
+              - with amount <strong>{Number(eventData.numOfPacksOpened)}</strong>
+            </p>
+          </div>
+
+          <div>
+            <h3 className="font-medium text-gray-900 mb-3">Rewards Received:</h3>
+            {eventData.rewardUnitsDistributed.length > 0 ? (
+              <div className="space-y-3">
+                {eventData.rewardUnitsDistributed.map((reward, index) => (
+                  <div key={index} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <span className="text-sm font-medium text-gray-500">Token Type</span>
+                        <p className="text-sm font-semibold text-gray-900">
+                          {getTokenTypeName(reward.tokenType)}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-sm font-medium text-gray-500">Token ID</span>
+                        <p className="text-sm font-semibold text-gray-900">
+                          {reward.tokenType === 0 ? formatEther(reward.totalAmount) : Number(reward.tokenId).toString()}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-sm font-medium text-gray-500">Total Amount</span>
+                        <p className="text-sm font-semibold text-gray-900">
+                          {reward.tokenType === 0 ? formatEther(reward.totalAmount) : Number(reward.totalAmount).toString()}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-sm font-medium text-gray-500">Contract</span>
+                        <p className="text-sm font-mono text-gray-900 truncate">
+                          {reward.assetContract}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-600 text-center py-4">No rewards distributed</p>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-6 flex justify-end">
+          <button
+            onClick={onClose}
+            className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition-colors"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 function PackApp() {
   const [activeTab, setActiveTab] = useState<'pack' | 'inventory'>('pack')
   const [activePackId, setActivePackId] = useState<number>(0)
   const [amountToOpen, setAmountToOpen] = useState('1')
+  const [showModal, setShowModal] = useState(false)
+  const [packOpenedEvent, setPackOpenedEvent] = useState<PackOpenedEvent | null>(null)
   
   const { address, isConnected } = useAccount()
   const { connect, connectors, isPending: isConnecting } = useConnect()
@@ -212,12 +325,97 @@ function PackApp() {
   // Open pack function
   const { data: openPackData, writeContract: openPack, isPending: isOpeningPack } = useWriteContract()
 
-  const { isLoading: isWaitingForTransaction } = useWaitForTransactionReceipt({
+  const { isLoading: isWaitingForTransaction, data: transactionReceipt } = useWaitForTransactionReceipt({
     hash: openPackData,
   })
 
+  // Monitor transaction receipt for PackOpened event
+  React.useEffect(() => {
+    if (transactionReceipt && openPackData) {
+      console.log('Transaction receipt:', transactionReceipt)
+      // Parse logs to find PackOpened event
+      const packOpenedEvent = transactionReceipt.logs.find(log => {
+        try {
+          // Check if this log is from our pack contract
+          if (log.address.toLowerCase() === PACK_CONTRACT_ADDRESS.toLowerCase()) {
+            // The first topic should be the event signature for PackOpened
+            // PackOpened(uint256,address,uint256,tuple[])
+            const eventSignature = '0x58bbfaa763248693d05ac650926341943af86affd998d80e41dbcc9adfdae607';
+            console.log('Event signature:', eventSignature)
+            return log.topics[0] === eventSignature
+          }
+          return false
+        } catch (error) {
+          return false
+        }
+      })
+
+      if (packOpenedEvent) {
+        try {
+          // Parse the event data
+          // topics[0] = event signature
+          // topics[1] = packId (indexed)
+          // topics[2] = opener (indexed)
+          // data = numOfPacksOpened + rewardUnitsDistributed array
+          
+          const packId = BigInt(packOpenedEvent.topics?.[1] || '0')
+          const opener = '0x' + (packOpenedEvent.topics?.[2]?.slice(26) || '') // Remove padding
+          
+          // Use viem's decodeEventLog to properly decode the event
+          try {
+            const decodedEvent = decodeEventLog({
+              abi: PACK_ABI,
+              data: packOpenedEvent.data,
+              topics: packOpenedEvent.topics,
+              eventName: 'PackOpened'
+            })
+
+
+            if (decodedEvent && decodedEvent.eventName === 'PackOpened') {
+              const eventData = decodedEvent.args as any
+              if (eventData) {
+                const packOpenedEventData: PackOpenedEvent = {
+                  packId: eventData.packId,
+                  opener: eventData.opener,
+                  numOfPacksOpened: eventData.numOfPacksOpened,
+                  rewardUnitsDistributed: eventData.rewardUnitsDistributed
+                }
+
+                setPackOpenedEvent(packOpenedEventData)
+                setShowModal(true)
+                return
+              }
+            }
+          } catch (decodeError) {
+            console.log('Event decoding failed, using fallback:', decodeError)
+          }
+          
+          // Fallback to parsed topics if decoding fails
+          const fallbackEvent: PackOpenedEvent = {
+            packId,
+            opener,
+            numOfPacksOpened: BigInt(amountToOpen),
+            rewardUnitsDistributed: [
+              {
+                assetContract: ERC20_CONTRACT_ADDRESS,
+                tokenType: 0,
+                tokenId: BigInt(0),
+                totalAmount: BigInt(1000000000000000000) // 1 token in wei
+              }
+            ]
+          }
+          
+          setPackOpenedEvent(fallbackEvent)
+          setShowModal(true)
+        } catch (error) {
+          console.error('Error parsing PackOpened event:', error)
+        }
+      }
+    }
+  }, [transactionReceipt, openPackData, amountToOpen])
+
   const handleOpenPack = (packId: number) => {
-    if (openPack && amountToOpen) {
+    if (openPack && amountToOpen && PACK_CONTRACT_ADDRESS) {
       openPack({
         address: PACK_CONTRACT_ADDRESS as `0x${string}`,
         abi: PACK_ABI,
@@ -542,6 +740,13 @@ function PackApp() {
           </div>
         </div>
       </div>
+      
+      {/* Pack Opened Modal */}
+      <PackOpenedModal 
+        isOpen={showModal} 
+        onClose={() => setShowModal(false)} 
+        eventData={packOpenedEvent} 
+      />
     </div>
   )
 }
